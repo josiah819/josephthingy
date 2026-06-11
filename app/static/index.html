@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MediaGrab</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>⬇️</text></svg>">
+<style>
+  :root {
+    --bg: #0b0f14; --card: #121822; --card2: #0e141d; --line: #1f2937;
+    --text: #e5eaf1; --dim: #8a94a6; --accent: #4da3ff; --accent2: #2f7fe0;
+    --green: #34d399; --red: #f87171; --amber: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; align-items: center; padding: 40px 16px 60px;
+  }
+  .wrap { width: 100%; max-width: 780px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h1 .arrow { color: var(--accent); }
+  .tag { color: var(--dim); margin: 0 0 24px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; margin-bottom: 22px;
+  }
+  .row { display: flex; gap: 10px; }
+  input[type=url] {
+    flex: 1; background: var(--card2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 12px 14px; font-size: 15px; outline: none; min-width: 0;
+  }
+  input[type=url]:focus { border-color: var(--accent2); }
+  button.go {
+    background: linear-gradient(180deg, var(--accent), var(--accent2)); color: #fff;
+    border: 0; border-radius: 10px; padding: 12px 26px; font-size: 15px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  button.go:hover { filter: brightness(1.1); }
+  button.go:disabled { opacity: .5; cursor: default; }
+  .opts { display: flex; gap: 16px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: var(--card2); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button {
+    background: none; border: 0; color: var(--dim); padding: 7px 18px; cursor: pointer;
+    font-size: 14px; font-weight: 600;
+  }
+  .seg button.on { background: var(--accent2); color: #fff; }
+  select {
+    background: var(--card2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 9px; padding: 7px 10px; font-size: 14px;
+  }
+  select:disabled { opacity: .4; }
+  label.chk { color: var(--dim); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .err-banner { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+  .offline { display:none; color: var(--amber); font-size: 13px; margin-bottom: 10px; }
+
+  .job {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .job .top { display: flex; align-items: center; gap: 10px; }
+  .job .title { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--card2); border: 1px solid var(--line); color: var(--dim); text-transform: uppercase; }
+  .status { font-size: 13px; color: var(--dim); margin-top: 4px; }
+  .status.done { color: var(--green); }
+  .status.error { color: var(--red); }
+  .bar { height: 6px; background: var(--card2); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 4px; transition: width .4s; }
+  .bar i.proc { background: var(--amber); }
+  .bar i.ok { background: var(--green); }
+  .detail { font: 11px/1.4 ui-monospace, monospace; color: #5b6679; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .actions { display: flex; gap: 8px; }
+  a.dl {
+    background: var(--green); color: #06281c; text-decoration: none; font-weight: 700; font-size: 13px;
+    padding: 7px 16px; border-radius: 8px;
+  }
+  a.dl:hover { filter: brightness(1.1); }
+  button.x {
+    background: var(--card2); border: 1px solid var(--line); color: var(--dim);
+    border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  button.x:hover { color: var(--red); border-color: var(--red); }
+  details { margin-top: 8px; }
+  summary { font-size: 12px; color: var(--dim); cursor: pointer; }
+  pre { font-size: 11px; color: #9aa5b5; background: var(--card2); border-radius: 8px; padding: 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  .empty { color: #3d4757; text-align: center; padding: 30px 0; font-size: 14px; }
+  footer { color: #3d4757; font-size: 12px; margin-top: 26px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="arrow">⬇</span> MediaGrab</h1>
+  <p class="tag">Paste a YouTube / TikTok / Instagram / Reddit / X link — get the file.</p>
+
+  <div class="offline" id="offline">Server unreachable — retrying…</div>
+
+  <div class="card">
+    <form id="form">
+      <div class="row">
+        <input type="url" id="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" autofocus>
+        <button class="go" id="go" type="submit">Grab</button>
+      </div>
+      <div class="opts">
+        <span class="seg" id="seg">
+          <button type="button" data-fmt="mp4" class="on">MP4 video</button>
+          <button type="button" data-fmt="mp3">MP3 audio</button>
+        </span>
+        <select id="quality">
+          <option value="max" selected>Max resolution</option>
+          <option value="2160">2160p (4K)</option>
+          <option value="1440">1440p</option>
+          <option value="1080">1080p</option>
+          <option value="720">720p</option>
+          <option value="480">480p</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="compat"> Prefer H.264 (plays anywhere)</label>
+        <label class="chk"><input type="checkbox" id="autodl" checked> Auto-download when ready</label>
+      </div>
+      <div class="err-banner" id="err"></div>
+    </form>
+  </div>
+
+  <div id="jobs"><div class="empty">Nothing yet. Paste a link above.</div></div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let fmt = "mp4";
+let lastSnapshot = "";
+const mine = new Set();        // jobs submitted from this tab
+const fired = new Set();       // auto-downloads already triggered
+const openLogs = new Set();    // <details> kept open across re-renders
+let pollTimer = null;
+
+$("seg").addEventListener("click", e => {
+  const b = e.target.closest("button[data-fmt]");
+  if (!b) return;
+  fmt = b.dataset.fmt;
+  document.querySelectorAll("#seg button").forEach(x => x.classList.toggle("on", x === b));
+  $("quality").disabled = fmt === "mp3";
+  $("compat").disabled = fmt === "mp3";
+});
+
+$("autodl").checked = localStorage.getItem("autodl") !== "0";
+$("autodl").addEventListener("change", () => localStorage.setItem("autodl", $("autodl").checked ? "1" : "0"));
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const url = $("url").value.trim();
+  if (!url) return;
+  $("go").disabled = true;
+  $("err").style.display = "none";
+  try {
+    const r = await fetch("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, format: fmt, quality: $("quality").value, compat: $("compat").checked })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "Request failed");
+    mine.add(j.id);
+    $("url").value = "";
+    refresh(true);
+  } catch (ex) {
+    $("err").textContent = ex.message;
+    $("err").style.display = "block";
+  } finally {
+    $("go").disabled = false;
+  }
+});
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtBytes = n => {
+  if (n == null) return "";
+  const u = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return n.toFixed(n >= 100 || i === 0 ? 0 : 1) + " " + u[i];
+};
+
+function statusLine(j) {
+  switch (j.status) {
+    case "queued": return "Queued…";
+    case "starting": return "Starting…";
+    case "downloading": return "Downloading — " + (j.progress || 0).toFixed(0) + "%";
+    case "processing": return "Converting…";
+    case "done": return "Ready — " + fmtBytes(j.size);
+    case "error": return "Failed — " + (j.error || "unknown error");
+    case "canceled": return "Canceled";
+    default: return j.status;
+  }
+}
+
+function render(list) {
+  const snap = JSON.stringify(list);
+  if (snap === lastSnapshot) return;
+  lastSnapshot = snap;
+  const box = $("jobs");
+  if (!list.length) {
+    box.innerHTML = '<div class="empty">Nothing yet. Paste a link above.</div>';
+    return;
+  }
+  box.innerHTML = list.map(j => {
+    const active = ["queued", "starting", "downloading", "processing"].includes(j.status);
+    const barCls = j.status === "done" ? "ok" : j.status === "processing" ? "proc" : "";
+    const pct = j.status === "done" ? 100 : (j.progress || 0);
+    const dl = j.status === "done" ? `<a class="dl" href="/api/jobs/${j.id}/file">Download</a>` : "";
+    const xLabel = active ? "Cancel" : "Remove";
+    const log = j.status === "error" && j.log_tail?.length
+      ? `<details${openLogs.has(j.id) ? " open" : ""} data-id="${j.id}"><summary>show log</summary><pre>${esc(j.log_tail.join("\n"))}</pre></details>` : "";
+    const detail = active && j.detail ? `<div class="detail">${esc(j.detail)}</div>` : "";
+    const bar = (active || j.status === "done") ? `<div class="bar"><i class="${barCls}" style="width:${pct}%"></i></div>` : "";
+    return `<div class="job">
+      <div class="top">
+        <span class="badge">${esc(j.format)}</span>
+        <div class="title" title="${esc(j.title || j.url)}">${esc(j.title || j.url)}</div>
+        <div class="actions">${dl}<button class="x" data-del="${j.id}">${xLabel}</button></div>
+      </div>
+      <div class="status ${esc(j.status)}">${esc(statusLine(j))}</div>
+      ${bar}${detail}${log}
+    </div>`;
+  }).join("");
+}
+
+$("jobs").addEventListener("click", async e => {
+  const del = e.target.closest("button[data-del]");
+  if (del) {
+    await fetch("/api/jobs/" + del.dataset.del, { method: "DELETE" }).catch(() => {});
+    refresh(true);
+  }
+});
+$("jobs").addEventListener("toggle", e => {
+  const d = e.target.closest("details[data-id]");
+  if (d) d.open ? openLogs.add(d.dataset.id) : openLogs.delete(d.dataset.id);
+}, true);
+
+function maybeAutoDownload(list) {
+  if (!$("autodl").checked) return;
+  for (const j of list) {
+    if (j.status === "done" && mine.has(j.id) && !fired.has(j.id)) {
+      fired.add(j.id);
+      const a = document.createElement("a");
+      a.href = `/api/jobs/${j.id}/file`;
+      a.download = "";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  }
+}
+
+async function refresh(now) {
+  clearTimeout(pollTimer);
+  let delay = 4000;
+  try {
+    const r = await fetch("/api/jobs");
+    const list = await r.json();
+    $("offline").style.display = "none";
+    render(list);
+    maybeAutoDownload(list);
+    if (list.some(j => ["queued", "starting", "downloading", "processing"].includes(j.status))) delay = 1200;
+  } catch {
+    $("offline").style.display = "block";
+    lastSnapshot = "";
+  }
+  pollTimer = setTimeout(refresh, now === true ? Math.min(delay, 400) : delay);
+}
+
+fetch("/api/meta").then(r => r.json()).then(m => {
+  $("foot").textContent = `yt-dlp ${m.ytdlp} • files auto-delete after ${m.cleanup_hours}h • cookies ${m.cookies ? "loaded" : "not set"} • LAN use only`;
+}).catch(() => {});
+
+refresh(true);
+</script>
+</body>
+</html>
